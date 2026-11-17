@@ -14,7 +14,7 @@
 | M4 字段映射 | 看旧名到新名的映射、别名 SQL、冲突项 | GET /api/mapping | `app/modules/m4_mapping/handler.py` `app/modules/m4_mapping/service.py` `app/modules/m4_mapping/mapping.py` `app/modules/m4_mapping/sqlalias.py` `app/modules/m4_mapping/rename.py` | `tests/test_m4_mapping.py` |
 | M5 影响面 | 看受影响的下游节点、环、断链、单边登记 | GET /api/impact | `app/modules/m5_impact/handler.py` `app/modules/m5_impact/service.py` `app/modules/m5_impact/closure.py` `app/modules/m5_impact/cycle.py` `app/modules/m5_impact/broken.py` | `tests/test_m5_impact.py` |
 | M6 版本批次 | 跑批次、看历史、验陈旧拒绝与区间重叠 | POST /api/runs | `app/modules/m6_batches/handler.py` `app/modules/m6_batches/service.py` `app/modules/m6_batches/window.py` `app/modules/m6_batches/guard.py` `app/modules/m6_batches/history.py` | `tests/test_m6_batches.py` |
-| M7 迁移单 | 出带条款号的迁移单与三份账目 CSV | GET /api/export/spec.md | `app/modules/m7_migration/handler.py` `app/modules/m7_migration/service.py` `app/modules/m7_migration/spec_md.py` `app/modules/m7_migration/csv_out.py` `app/modules/m7_migration/ledger.py` | `tests/test_m7_migration.py` |
+| M7 迁移单 | 出带条款号的迁移单与四份账目 CSV、时间裁决、发布回退 | GET /api/export/spec.md | `app/modules/m7_migration/handler.py` `app/modules/m7_migration/service.py` `app/modules/m7_migration/spec_md.py` `app/modules/m7_migration/csv_out.py` `app/modules/m7_migration/ledger.py` `app/modules/m7_migration/temporal.py` `app/modules/m7_migration/publish.py` | `tests/test_m7_migration.py` `tests/test_m7_temporal.py` |
 
 ## 陷阱登记
 
@@ -30,6 +30,9 @@
 | TRAP-22 | 同一字段被连续改过两次名 | 只认最近一跳，最早的名字解析不到 | 跨版本改名链一路解析到底 | `app/modules/m4_mapping/rename.py` | `tests/test_m4_mapping.py::test_trap22_alias_chain_resolves_multi_hop` |
 | TRAP-25 | 两个版本生效区间重叠 | 取到哪版看运气 | 半开区间比较，重叠直接标记警告 | `app/modules/m6_batches/window.py` | `tests/test_m6_batches.py::test_trap25_overlap_flagged_but_adjacent_clean` |
 | TRAP-26 | 基于旧版本号提交 | 后提交无条件覆盖新结果 | 版本号乐观锁，基线落后即 409 | `app/modules/m6_batches/guard.py` | `tests/test_m6_batches.py::test_trap26_stale_submission_rejected` |
+| TRAP-27 | 开户日统一按 UTC 落库 | 零点附近的开户记录跨日，日报归集错一天 | 业务日按源端本地日历日保留，UTC 瞬间只作审计旁证 | `app/modules/m7_migration/temporal.py` | `tests/test_m7_temporal.py::test_midnight_boundary_keeps_business_day_but_not_instant` |
+| TRAP-28 | 支付时刻只保留本地墙钟 | 审计区间错位，同一瞬间出现两个值 | 瞬间以 UTC 为权威，本地时间由它派生展示 | `app/modules/m7_migration/temporal.py` | `tests/test_m7_temporal.py::test_replay_detects_instant_shift` |
+| TRAP-29 | 切换失败后指针已挪走 | 页面与导出读到半份迁移单 | 先体检再切换，失败保持原指针，可回退上一份完整迁移单 | `app/modules/m7_migration/publish.py` | `tests/test_m7_temporal.py::test_failed_switch_keeps_previous_complete_spec` |
 
 ## 对账规则
 

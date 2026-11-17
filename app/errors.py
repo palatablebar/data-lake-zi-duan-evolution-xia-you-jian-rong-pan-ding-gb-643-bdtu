@@ -48,6 +48,18 @@ class Conflict(FieldmapError):
     label = "记录冲突"
 
 
+class SpecSwitchFailed(FieldmapError):
+    status = 409
+    code = "SPEC_SWITCH_FAILED"
+    label = "迁移单切换失败"
+
+
+class SpecRollbackUnavailable(FieldmapError):
+    status = 409
+    code = "SPEC_ROLLBACK_UNAVAILABLE"
+    label = "无法回退迁移单"
+
+
 def install(app: FastAPI) -> None:
     @app.exception_handler(FieldmapError)
     async def _handle_domain(_: Request, exc: FieldmapError) -> JSONResponse:

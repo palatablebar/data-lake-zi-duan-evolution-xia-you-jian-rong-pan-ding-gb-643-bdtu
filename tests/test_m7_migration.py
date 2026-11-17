@@ -25,9 +25,10 @@ def test_spec_markdown_has_clauses_and_footnotes(run):
     assert text.startswith(f"# 迁移单 {run['run_id']}")
     for index in range(1, 7):
         assert f"### 3.{index} " in text
-    assert "[^1]" in text and "[^4]" in text
+    assert "[^1]" in text and "[^4]" in text and "[^5]" in text and "[^6]" in text
     assert "## 2 字段账" in text
-    assert "## 6 回滚" in text
+    assert "## 5 时间字段裁决" in text
+    assert "## 7 回滚" in text
     assert "| 旧版本字段 | 13 |" in text
     assert "| 新版本字段 | 16 |" in text
 

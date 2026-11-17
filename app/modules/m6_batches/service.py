@@ -13,6 +13,7 @@ from app.modules.m4_mapping import service as mapping
 from app.modules.m5_impact import service as impact
 from app.modules.m6_batches import guard, history, window as window_mod
 from app.modules.m7_migration import service as migration
+from app.modules.m7_migration import temporal
 
 
 def _ref_counts(consumers: list[dict]) -> dict:
@@ -149,6 +150,8 @@ def execute(old_file: str = config.DEFAULT_OLD, new_file: str = config.DEFAULT_N
         "warnings": warnings,
         "reused": False,
     }
+    # 时间裁决随批次一起定稿，页面与导出只读这一份，不再各算一遍。
+    run["temporal_ruling"] = temporal.build(run)
     run["summary"] = history.summary_of(run)
     store.save_run(run)
     return run

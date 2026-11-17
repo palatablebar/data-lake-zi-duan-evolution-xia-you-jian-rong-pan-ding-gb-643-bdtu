@@ -17,6 +17,12 @@ FIELD_HEADER = [
 
 REF_HEADER = ["consumer", "kind", "ref", "table", "column", "via", "field_id", "reason"]
 
+TEMPORAL_HEADER = [
+    "field_id", "table", "field", "old_type", "new_type", "semantic", "semantic_label",
+    "business_basis", "audit_basis", "storage_rule", "replay_rule",
+    "must_recompute", "can_read", "table_consumers", "conclusion",
+]
+
 
 def _buffer() -> tuple[io.StringIO, "csv.writer"]:
     buffer = io.StringIO()
@@ -73,6 +79,31 @@ def ledger_csv(ledger: dict) -> str:
     refs = ledger.get("refs") or {}
     for name in ("refs_total", "reachable", "broken", "aliased"):
         writer.writerow([name, refs.get(name, 0)])
+    return buffer.getvalue()
+
+
+def temporal_csv(ruling: dict) -> str:
+    """时间裁决导出：页面、Markdown 与这份 CSV 共用同一份裁决对象。"""
+    buffer, writer = _buffer()
+    writer.writerow(TEMPORAL_HEADER)
+    for item in ruling.get("fields") or []:
+        writer.writerow([
+            str(item.get("field_id") or ""),
+            item.get("table") or "",
+            item.get("name") or "",
+            item.get("old_type") or "",
+            item.get("new_type") or "",
+            item.get("semantic") or "",
+            item.get("semantic_label") or "",
+            item.get("business_basis") or "",
+            item.get("audit_basis") or "",
+            item.get("storage_rule") or "",
+            item.get("replay_rule") or "",
+            "、".join(item.get("downstream_must_recompute") or []),
+            "、".join(item.get("downstream_can_read") or []),
+            "、".join(item.get("table_consumers") or []),
+            item.get("conclusion") or "",
+        ])
     return buffer.getvalue()
 
 

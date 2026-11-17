@@ -5,12 +5,20 @@
 
 from __future__ import annotations
 
-from app import manifest as manifest_mod, store
-from app.modules.m7_migration import csv_out, ledger, spec_md
+from app import manifest as manifest_mod
+from app.modules.m7_migration import csv_out, ledger, publish, spec_md, temporal
 
 
 def build_ledger(diff: dict, consumers: list[dict], resolution: dict) -> dict:
     return ledger.build(diff, consumers, resolution)
+
+
+def temporal_ruling(run: dict) -> dict:
+    return run.get("temporal_ruling") or temporal.build(run)
+
+
+def temporal_csv_text(run: dict) -> str:
+    return csv_out.temporal_csv(temporal_ruling(run))
 
 
 def spec_markdown(run: dict) -> str:
@@ -42,13 +50,32 @@ def manifest_json_text(run: dict) -> str:
     payload["input_names"] = run.get("input_names") or {}
     payload["ledger"] = run.get("ledger") or {}
     payload["warnings"] = run.get("warnings") or []
+    # 运行清单与迁移单共用同一份裁决，避免两处结论不一致。
+    payload["temporal_ruling"] = temporal_ruling(run)
     return csv_out.manifest_json(payload)
 
 
 def latest_or_404() -> dict:
-    run = store.latest_run()
+    """导出读取当前迁移单：优先已发布的，没有发布记录时退回最新批次。"""
+    run = publish.current_run()
     if not run:
         from app import errors
 
         raise errors.NotFound("还没有批次，先在版本历史页跑一次")
     return run
+
+
+def current_run() -> dict | None:
+    return publish.current_run()
+
+
+def publish_run(run_id: str | None = None, replay: list[dict] | None = None) -> dict:
+    return publish.publish(run_id, replay)
+
+
+def rollback_run() -> dict:
+    return publish.rollback()
+
+
+def publish_state() -> dict:
+    return publish.state()

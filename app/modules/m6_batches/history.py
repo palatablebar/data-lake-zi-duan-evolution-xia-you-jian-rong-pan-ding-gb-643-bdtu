@@ -9,6 +9,8 @@ def summary_of(run: dict) -> dict:
     ledger = run.get("ledger") or {}
     counts = ledger.get("counts") or {}
     balanced = ledger.get("balanced") or {}
+    from app.modules.m7_migration import temporal
+
     return {
         "run_id": run["run_id"],
         "version_seq": run["version_seq"],
@@ -26,6 +28,7 @@ def summary_of(run: dict) -> dict:
         "balanced": bool(balanced.get("all")),
         "reused": bool(run.get("reused")),
         "warnings": len(run.get("warnings") or []),
+        "temporal": temporal.summary(run) if run.get("temporal_ruling") or run.get("diff") else None,
     }
 
 

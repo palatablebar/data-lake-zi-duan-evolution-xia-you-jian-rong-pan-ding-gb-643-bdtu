@@ -54,7 +54,13 @@ docker compose up -d --build
 | GET | `/api/export/fields.csv` | 字段账 CSV |
 | GET | `/api/export/refs.csv` | 引用账 CSV |
 | GET | `/api/export/ledger.csv` | 账目 CSV |
-| GET | `/api/export/manifest.json` | 运行清单 |
+| GET | `/api/export/temporal.csv` | 时间裁决 CSV |
+| GET | `/api/export/manifest.json` | 运行清单（含时间裁决） |
+| GET | `/api/temporal` | 当前时间裁决与发布状态 |
+| POST | `/api/temporal/replay` | 逐条回放核验（业务日比本地日期，瞬间比 UTC） |
+| GET | `/api/spec/state` | 当前 / 已发布迁移单与回退栈 |
+| POST | `/api/spec/publish` | 发布当前迁移单；可带 `replay` 数组先验回放 |
+| POST | `/api/spec/rollback` | 回退到上一份完整迁移单 |
 
 ## 6 失败处置
 
@@ -64,6 +70,16 @@ docker compose up -d --build
 | 400 `WINDOW_INVERTED` | 生效区间起点不早于终点 | 检查 `effective_from` / `effective_to` |
 | 400 `BAD_INPUT` | 文件名、参数或 JSON 结构不对 | 看返回的 `detail` |
 | 404 `NOT_FOUND` | 还没跑过批次 | 先在 `/batches` 点「跑一次」 |
+| 409 `SPEC_SWITCH_FAILED` | 账不平、裁决不完整或回放改变业务日/瞬间 | 看 `detail.problems`；原迁移单保持不变 |
+| 409 `SPEC_ROLLBACK_UNAVAILABLE` | 回退栈里没有上一份完整迁移单 | 确认已发布过至少两份，或先修复当前迁移单 |
+
+### 6.1 时间口径处置
+
+| 现象 | 原因 | 处置 |
+|---|---|---|
+| 日报零点附近多/少一天 | 开户日被统一时区落库后再截日 | 按 `business_day` 保留源端本地日历日，重算直接引用者 |
+| 审计回放区间错位 | 支付时刻被按本地墙钟重新解释 | 按 `instant` 以 UTC 为权威，本地时间改为派生 |
+| 重跑行数变化 | 批次键被参数或时区影响 | 检查 `params` 与生效区间；同输入应命中 `RUN_REUSED` |
 
 ## 7 端口与并发
 

@@ -28,6 +28,20 @@ DISPLAY_TZ_NAME = "Asia/Shanghai"
 DISPLAY_OFFSET = timedelta(hours=8)
 UTC = timezone.utc
 
+# 业务时区：开户日等「本地日历日」口径按源端业务时区解释。
+# 只用于把源端墙钟时间落成业务日，不用它回写审计瞬间。
+BUSINESS_TZ_NAME = "Asia/Shanghai"
+BUSINESS_OFFSET = timedelta(hours=8)
+
+# 时间字段的两类业务口径。
+# business_day：业务日，必须保留源端本地日历日（开户日归集）。
+# instant：绝对瞬间，必须保留同一时刻（审计回放）。
+SEMANTIC_BUSINESS_DAY = "business_day"
+SEMANTIC_INSTANT = "instant"
+
+# 时间口径裁决的版本号：口径规则变化时递增，随裁决一起发布。
+TEMPORAL_POLICY_VERSION = "tz-2026.11"
+
 # 样例数据：默认一旧一新一对，外加下游登记
 DEFAULT_OLD = "schema_v2026_06.sql"
 DEFAULT_NEW = "schema_v2026_09.sql"
@@ -67,13 +81,18 @@ TYPE_ALIASES = {
     "date": "date",
     "timestamp": "timestamp",
     "datetime": "timestamp",
+    "timestamp without time zone": "timestamp",
+    "timestamptz": "timestamptz",
+    "timestamp with time zone": "timestamptz",
+    "timestamp_tz": "timestamptz",
+    "datetimeoffset": "timestamptz",
     "bool": "bool",
     "boolean": "bool",
 }
 
 NUMERIC_BASES = {"tinyint", "smallint", "int", "bigint", "float", "double", "decimal"}
 TEXT_BASES = {"varchar", "char", "string", "text"}
-TEMPORAL_BASES = {"date", "timestamp"}
+TEMPORAL_BASES = {"date", "timestamp", "timestamptz"}
 BOOL_BASES = {"bool"}
 
 # required 列的取值记号，三态靠这套常量区分

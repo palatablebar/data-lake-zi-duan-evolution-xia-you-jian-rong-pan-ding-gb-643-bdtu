@@ -3,14 +3,21 @@
 {% block body %}
 <section class="doc-section">
   <h1>迁移单</h1>
-  <p class="lede">条款 <span class="mono">{{ clauses|length }}</span>　破坏 <span class="mono">{{ ledger.counts.breaking or 0 }}</span>　断链 <span class="mono">{{ ledger.counts.refs_broken or 0 }}</span></p>
+  <p class="lede">条款 <span class="mono">{{ clauses|length }}</span>　破坏 <span class="mono">{{ ledger.counts.breaking or 0 }}</span>　断链 <span class="mono">{{ ledger.counts.refs_broken or 0 }}</span>　时间字段 <span class="mono">{{ temporal.fields|length }}</span></p>
   <div class="actions">
     <a class="btn" href="/api/export/spec.md">迁移单 MD</a>
     <a class="btn ghost" href="/api/export/fields.csv">字段账 CSV</a>
     <a class="btn ghost" href="/api/export/refs.csv">引用账 CSV</a>
     <a class="btn ghost" href="/api/export/ledger.csv">账目 CSV</a>
+    <a class="btn ghost" href="/api/export/temporal.csv">时间裁决 CSV</a>
     <a class="btn ghost" href="/api/export/manifest.json">运行清单</a>
   </div>
+  <p class="lede">
+    当前迁移单 <span class="mono">{{ publish_state.current_run_id or '—' }}</span>
+    　发布状态 {% if publish_state.published_run_id %}<span class="st st-ok">已发布</span>{% else %}<span class="st st-info">未发布</span>{% endif %}
+    　口径版本 <span class="mono">{{ temporal.policy_version or '—' }}</span>
+    　回放指纹 <span class="mono">{{ temporal.replay.signature or '—' }}</span>
+  </p>
 
   {% if empty %}
   <p class="empty">还没有批次。</p>
@@ -39,10 +46,47 @@
 </section>
 
 <section class="doc-section">
-  <h2><span class="clause">6</span>回滚</h2>
+  <h2><span class="clause">5</span>时间字段裁决</h2>
+  <p class="lede">业务时区 <span class="mono">{{ temporal.business_tz }}（{{ temporal.business_offset }}）</span>　业务日 <span class="mono">{{ temporal.summary.business_day or 0 }}</span>　绝对瞬间 <span class="mono">{{ temporal.summary.instant or 0 }}</span></p>
+  {% if temporal.fields %}
+  <div class="wrap-scroll">
+    <table>
+      <caption>时间字段<sup class="fn">1</sup></caption>
+      <thead>
+        <tr><th>字段</th><th>类型</th><th>业务口径</th><th>保留依据</th><th>必须重算</th><th>可继续读取</th><th>同表下游</th></tr>
+      </thead>
+      <tbody>
+        {% for item in temporal.fields %}
+        <tr>
+          <td class="name">{{ item.table }}.{{ item.name }}</td>
+          <td class="name">{{ item.old_type or '—' }} → {{ item.new_type or '—' }}</td>
+          <td>{% if item.semantic == 'business_day' %}<span class="st st-warn">{{ item.semantic_label }}</span>{% else %}<span class="st st-info">{{ item.semantic_label }}</span>{% endif %}</td>
+          <td class="reason">{{ item.business_basis }}</td>
+          <td class="name">{{ item.downstream_must_recompute|join('、') or '—' }}</td>
+          <td class="name">{{ item.downstream_can_read|join('、') or '—' }}</td>
+          <td class="name">{{ item.table_consumers|join('、') or '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="lede">{{ temporal.conclusion }}</p>
+  {% else %}
+  <p class="empty">本次没有时间族字段。</p>
+  {% endif %}
+</section>
+
+<section class="doc-section">
+  <h2><span class="clause">6</span>影响面</h2>
+  <p class="lede">下游 <span class="mono">{{ ledger.counts.consumers or 0 }}</span>　登记引用 <span class="mono">{{ ledger.counts.refs_total or 0 }}</span>　可达 <span class="mono">{{ ledger.counts.refs_reachable or 0 }}</span>　断链 <span class="mono">{{ ledger.counts.refs_broken or 0 }}</span></p>
+</section>
+
+<section class="doc-section">
+  <h2><span class="clause">7</span>回滚</h2>
   <ol class="rollback">
     <li>先建兼容视图，旧名字继续可读。</li>
     <li>破坏项补默认值或换回原类型，再跑一次。</li>
+    <li>时间字段按第 5 节口径保留业务键，禁止先转 UTC 再截日。</li>
     <li>版本切回上一版，端点保持左闭右开。</li>
   </ol>
   {% if warnings %}
@@ -52,6 +96,7 @@
 
 <aside class="notes">
   <ol class="footnotes">
+    <li>业务日保留源端本地日历日，瞬间保留 UTC 瞬时值；页面与导出同源。<a class="back" href="#main">↩</a></li>
     <li>条款号与导出的 Markdown 一致。<a class="back" href="#main">↩</a></li>
     <li>账目差额不为 0 说明判定漏项。<a class="back" href="#main">↩</a></li>
   </ol>

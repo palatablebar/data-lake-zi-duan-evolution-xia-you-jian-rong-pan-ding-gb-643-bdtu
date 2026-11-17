@@ -10,7 +10,7 @@
 - 字段映射与别名 SQL；改名同时换类型的项不生成别名，单独列为冲突。
 - 影响面 = 引用身份解析后的反向闭包，附环、自引用、断链、单边登记。
 - 批次幂等：同一输入命中批次键不再新增行；基线落后的提交返回 409。
-- 迁移单 Markdown + 字段账、引用账、账目、运行清单四份导出。
+- 迁移单 Markdown + 字段账、引用账、账目、时间裁决四份导出；页面与导出同源。
 
 ## 模块
 
@@ -22,7 +22,7 @@
 | M4 字段映射 | 映射表、别名 SQL、冲突 | `GET /api/mapping`、`/mapping` |
 | M5 影响面 | 闭包、环、断链、单边 | `GET /api/impact`、`/impact` |
 | M6 版本批次 | 跑批次、历史、陈旧拒绝 | `POST /api/runs`、`/batches` |
-| M7 迁移单 | 条款号、账目导出 | `GET /api/export/spec.md`、`/spec` |
+| M7 迁移单 | 条款号、时间裁决、账目导出、发布回退 | `GET /api/export/spec.md`、`/spec` |
 
 ## 核心规则
 
@@ -52,7 +52,7 @@ curl -s localhost:18202/api/health
 3. `/mapping` 字段映射：`order_no → order_code` 的别名 SQL，`channel → pay_channel` 的冲突。
 4. `/impact` 影响面：受影响节点 4 个、1 个环、1 个自引用、2 处断链、2 处单边。
 5. `/batches` 版本历史：四账并列；「陈旧提交」验证 409。
-6. `/spec` 迁移单：6 条破坏条款，导出 Markdown 与三份 CSV。
+6. `/spec` 迁移单：6 条破坏条款、时间字段裁决（开户日按业务日、支付时刻按瞬间），导出 Markdown 与四份 CSV。
 
 ## 页面
 

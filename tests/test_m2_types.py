@@ -87,8 +87,16 @@ def test_cross_family_and_unknown_are_breaking():
 
 def test_grid_rows_shape():
     rows = value_range.grid_rows()
-    assert len(rows) == 15
+    assert len(rows) == 16
     labels = [row["label"] for row in rows]
-    assert "decimal(18,2)" in labels and "timestamp" in labels and "bool" in labels
+    assert "decimal(18,2)" in labels and "timestamp" in labels
+    assert "timestamptz" in labels and "bool" in labels
     for row in rows:
         assert set(row) == {"label", "super", "lo", "hi", "quantum", "exact"}
+
+
+def test_timestamp_to_timestamptz_is_widen():
+    """带时区时间戳能无损装下不带时区的写法，判放宽而不是跨族。"""
+    assert _compare("timestamp", "timestamptz")["change"] == "widen"
+    assert _compare("date", "timestamptz")["change"] == "widen"
+    assert _compare("timestamptz", "timestamp")["change"] == "narrow"

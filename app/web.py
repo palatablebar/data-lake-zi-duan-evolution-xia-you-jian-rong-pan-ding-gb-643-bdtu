@@ -81,8 +81,8 @@ templates.env.filters["day"] = _day
 templates.env.filters["via"] = _via
 
 
-def shell_context(active: str) -> dict:
-    run = store.latest_run()
+def shell_context(active: str, run: dict | None = None) -> dict:
+    run = run if run is not None else store.latest_run()
     created = (run or {}).get("created_at")
     return {
         "active": active,
@@ -99,7 +99,7 @@ def shell_context(active: str) -> dict:
 
 
 def render(request: Request, template: str, active: str, **extra) -> HTMLResponse:
-    context = shell_context(active)
+    context = shell_context(active, extra.get("run"))
     context["request"] = request
     context.update(extra)
     return templates.TemplateResponse(request, template, context)
@@ -107,8 +107,8 @@ def render(request: Request, template: str, active: str, **extra) -> HTMLRespons
 
 def page_or_404(request: Request, template: str, active: str, run: dict | None,
                 **extra) -> HTMLResponse:
-    """没有批次时给出空态，页面仍返回 200。"""
-    context = shell_context(active)
+    """没有批次时给出空态，页面仍返回 200；页头与正文用同一条批次。"""
+    context = shell_context(active, run)
     context["request"] = request
     context["empty"] = run is None
     context.update(extra)

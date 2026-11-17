@@ -134,7 +134,7 @@ def grid_rows() -> list[dict]:
             "quantum": "字符",
             "exact": "—",
         })
-    for label, rank in (("date", 0), ("timestamp", 1)):
+    for label, rank in (("date", 0), ("timestamp", 1), ("timestamptz", 2)):
         rows.append({
             "label": label,
             "super": "temporal",
@@ -148,7 +148,7 @@ def grid_rows() -> list[dict]:
     return rows
 
 
-TEMPORAL_RANK = {"date": 0, "timestamp": 1}
+TEMPORAL_RANK = {"date": 0, "timestamp": 1, "timestamptz": 2}
 
 
 def temporal_rank(base: str) -> int:
